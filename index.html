@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>World Cup 26: Remaining Team Rankings</title>
+  <link rel="icon" type="image/x-icon" href="favicon.svg">
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" />
+  <script
+    src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js">
+</script>
+<style>
+  body { padding: 2rem; }
+  .table-wrap {
+    max-height: 88vh;
+    overflow-y: auto;
+    border: 1px solid var(--tblr-border-color);
+    border-radius: 6px;
+  }
+  .linked-container {
+    position: relative;
+    display: flex;
+    gap: 0;
+    max-width: 900px;
+    margin: auto;
+  }
+  #tableA {
+    width: 360px;
+  }
+  #tableB {
+    width: 360px; margin-left: auto;
+  }
+  #connector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 88vh;
+    pointer-events: none;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    background: var(--tblr-bg-surface);
+  }
+</style>
+</head>
+
+<body>
+  <div class="linked-container">
+  <div id="tableA" class="table-wrap">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th colspan="3" style="text-align: center;">Remaining Teams</th>
+        </tr>
+        <tr>
+          <th class="text-end">Rank</th>
+          <th>Team</th>
+          <th class="text-end">Points</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyA"></tbody>
+    </table>
+  </div>
+
+  <svg id="connector"></svg>
+
+  <div id="tableB" class="table-wrap">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th colspan="3" style="text-align: center;">FIFA Rankings</th>
+        </tr>
+        <tr>
+          <th class="text-end">Rank</th>
+          <th>Team</th>
+          <th class="text-end">Points</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyB"></tbody>
+    </table>
+  </div>
+</div>
+
+
+
+<script>
+const countryISOMapping = {
+  AFG: "AF",
+  ALA: "AX",
+  ALB: "AL",
+  DZA: "DZ",
+  ASM: "AS",
+  AND: "AD",
+  AGO: "AO",
+  AIA: "AI",
+  ATA: "AQ",
+  ATG: "AG",
+  ARG: "AR",
+  ARM: "AM",
+  ABW: "AW",
+  AUS: "AU",
+  AUT: "AT",
+  AZE: "AZ",
+  BHS: "BS",
+  BHR: "BH",
+  BGD: "BD",
+  BRB: "BB",
+  BLR: "BY",
+  BEL: "BE",
+  BLZ: "BZ",
+  BEN: "BJ",
+  BMU: "BM",
+  BTN: "BT",
+  BOL: "BO",
+  BES: "BQ",
+  BIH: "BA",
+  BWA: "BW",
+  BVT: "BV",
+  BRA: "BR",
+  VGB: "VG",
+  IOT: "IO",
+  BRN: "BN",
+  BGR: "BG",
+  BFA: "BF",
+  BDI: "BI",
+  KHM: "KH",
+  CMR: "CM",
+  CAN: "CA",
+  CPV: "CV",
+  CYM: "KY",
+  CAF: "CF",
+  TCD: "TD",
+  CHL: "CL",
+  CHN: "CN",
+  HKG: "HK",
+  MAC: "MO",
+  CXR: "CX",
+  CCK: "CC",
+  COL: "CO",
+  COM: "KM",
+  COG: "CG",
+  COD: "CD",
+  COK: "CK",
+  CRI: "CR",
+  CIV: "CI",
+  HRV: "HR",
+  CUB: "CU",
+  CUW: "CW",
+  CYP: "CY",
+  CZE: "CZ",
+  DNK: "DK",
+  DJI: "DJ",
+  DMA: "DM",
+  DOM: "DO",
+  ECU: "EC",
+  EGY: "EG",
+  SLV: "SV",
+  GNQ: "GQ",
+  ERI: "ER",
+  EST: "EE",
+  ETH: "ET",
+  FLK: "FK",
+  FRO: "FO",
+  FJI: "FJ",
+  FIN: "FI",
+  FRA: "FR",
+  GUF: "GF",
+  PYF: "PF",
+  ATF: "TF",
+  GAB: "GA",
+  GMB: "GM",
+  GEO: "GE",
+  DEU: "DE",
+  GHA: "GH",
+  GIB: "GI",
+  GRC: "GR",
+  GRL: "GL",
+  GRD: "GD",
+  GLP: "GP",
+  GUM: "GU",
+  GTM: "GT",
+  GGY: "GG",
+  GIN: "GN",
+  GNB: "GW",
+  GUY: "GY",
+  HTI: "HT",
+  HMD: "HM",
+  VAT: "VA",
+  HND: "HN",
+  HUN: "HU",
+  ISL: "IS",
+  IND: "IN",
+  IDN: "ID",
+  IRN: "IR",
+  IRQ: "IQ",
+  IRL: "IE",
+  IMN: "IM",
+  ISR: "IL",
+  ITA: "IT",
+  JAM: "JM",
+  JPN: "JP",
+  JEY: "JE",
+  JOR: "JO",
+  KAZ: "KZ",
+  KEN: "KE",
+  KIR: "KI",
+  PRK: "KP",
+  KOR: "KR",
+  KWT: "KW",
+  KGZ: "KG",
+  LAO: "LA",
+  LVA: "LV",
+  LBN: "LB",
+  LSO: "LS",
+  LBR: "LR",
+  LBY: "LY",
+  LIE: "LI",
+  LTU: "LT",
+  LUX: "LU",
+  MKD: "MK",
+  MDG: "MG",
+  MWI: "MW",
+  MYS: "MY",
+  MDV: "MV",
+  MLI: "ML",
+  MLT: "MT",
+  MHL: "MH",
+  MTQ: "MQ",
+  MRT: "MR",
+  MUS: "MU",
+  MYT: "YT",
+  MEX: "MX",
+  FSM: "FM",
+  MDA: "MD",
+  MCO: "MC",
+  MNG: "MN",
+  MNE: "ME",
+  MSR: "MS",
+  MAR: "MA",
+  MOZ: "MZ",
+  MMR: "MM",
+  NAM: "NA",
+  NRU: "NR",
+  NPL: "NP",
+  NLD: "NL",
+  ANT: "AN",
+  NCL: "NC",
+  NZL: "NZ",
+  NIC: "NI",
+  NER: "NE",
+  NGA: "NG",
+  NIU: "NU",
+  NFK: "NF",
+  MNP: "MP",
+  NOR: "NO",
+  OMN: "OM",
+  PAK: "PK",
+  PLW: "PW",
+  PSE: "PS",
+  PAN: "PA",
+  PNG: "PG",
+  PRY: "PY",
+  PER: "PE",
+  PHL: "PH",
+  PCN: "PN",
+  POL: "PL",
+  PRT: "PT",
+  PRI: "PR",
+  QAT: "QA",
+  REU: "RE",
+  ROU: "RO",
+  RUS: "RU",
+  RWA: "RW",
+  BLM: "BL",
+  SHN: "SH",
+  KNA: "KN",
+  LCA: "LC",
+  MAF: "MF",
+  SPM: "PM",
+  VCT: "VC",
+  WSM: "WS",
+  SMR: "SM",
+  STP: "ST",
+  SAU: "SA",
+  SEN: "SN",
+  SRB: "RS",
+  SYC: "SC",
+  SLE: "SL",
+  SGP: "SG",
+  SXM: "SX",
+  SVK: "SK",
+  SVN: "SI",
+  SLB: "SB",
+  SOM: "SO",
+  ZAF: "ZA",
+  SGS: "GS",
+  SSD: "SS",
+  ESP: "ES",
+  LKA: "LK",
+  SDN: "SD",
+  SUR: "SR",
+  SJM: "SJ",
+  SWZ: "SZ",
+  SWE: "SE",
+  CHE: "CH",
+  SYR: "SY",
+  TWN: "TW",
+  TJK: "TJ",
+  TZA: "TZ",
+  THA: "TH",
+  TLS: "TL",
+  TGO: "TG",
+  TKL: "TK",
+  TON: "TO",
+  TTO: "TT",
+  TUN: "TN",
+  TUR: "TR",
+  TKM: "TM",
+  TCA: "TC",
+  TUV: "TV",
+  UGA: "UG",
+  UKR: "UA",
+  ARE: "AE",
+  GBR: "GB",
+  USA: "US",
+  UMI: "UM",
+  URY: "UY",
+  UZB: "UZ",
+  VUT: "VU",
+  VEN: "VE",
+  VNM: "VN",
+  VIR: "VI",
+  WLF: "WF",
+  ESH: "EH",
+  YEM: "YE",
+  ZMB: "ZM",
+  ZWE: "ZW",
+  XKX: "XK"
+}
+const RANKING_DATA = 'data/mens-rankings.json';
+const REMAIN_DATA = 'data/remaining.txt';
+
+const tbodyA = document.getElementById('tbodyA');
+const tbodyB = document.getElementById('tbodyB');
+
+async function loadData() {
+  try {
+    const rankingResult = await fetch(RANKING_DATA);
+    const rankingJson = await rankingResult.json();
+    const remainResult = await fetch(REMAIN_DATA);
+    const remainText = await remainResult.text();
+    const remainList = remainText.split('\n');
+    console.log(remainList)
+    renderRows(rankingJson.Results || [], remainList || []);
+  } catch (err) {
+    console.error('Failed to load data:', err);
+    tbodyA.innerHTML = '<tr><td colspan="2">Failed to load data.</td></tr>';
+  }
+}
+
+function getFlagEmoji(iso2Code) {
+  return iso2Code.toUpperCase().replace(/./g, char => 
+    String.fromCodePoint(char.charCodeAt(0) + 127397)
+  );
+}
+
+const customEmojis = {
+  'Algeria': '🇩🇿',
+  'Angola': '🇦🇴',
+  'Bahamas': '🇧🇸',
+  'Brunei': '🇧🇳',
+  'Bulgaria': '🇧🇬',
+  'Cayman Islands': '🇰🇾',
+  'Chile': '🇨🇱',
+  'Costa Rica': '🇨🇷',
+  'Croatia': '🇭🇷',
+  'Denmark': '🇩🇰',
+  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Germany': '🇩🇪',
+  'Greece': '🇬🇷',
+  'Guatemala': '🇬🇹',
+  'Guinea': '🇬🇳',
+  'Haiti': '🇭🇹',
+  'Honduras': '🇭🇳',
+  'Kosovo': '🇽🇰',
+  'Netherlands': '🇳🇱',
+  'Oman': '🇴🇲',
+  'Portugal': '🇵🇹',
+  'Seychelles': '🇸🇨',
+  'Switzerland': '🇨🇭',
+  'Palestine': '🇵🇸',
+  'Paraguay': '🇵🇾',
+  'Saudi Arabia': '🇸🇦',
+  'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'South Africa': '🇿🇦',
+  'Tonga': '🇹🇴',
+  'United Arab Emirates': '🇦🇪',
+  'Uruguay': '🇺🇾',
+  'Vietnam': '🇻🇳',
+  'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'Zambia': '🇿🇲',
+}
+
+function renderRows(teams, remaining) {
+  tbodyA.innerHTML = '';
+  tbodyB.innerHTML = '';
+  let remainCount = 1;
+
+  teams.forEach(function (t, i) {
+    console.log(i)
+    const trB = document.createElement('tr');
+    const teamId = t.IdCountry
+    // And emoji from id
+    const teamName = t.TeamName[0].Description
+    const teamISO2 = countryISOMapping[teamId] || '';
+    const teamEmoji = getFlagEmoji(teamISO2) || customEmojis[teamName] || '';
+    // console.log(countryId)
+    trB.dataset.id = t.IdCountry
+    // Table contents
+    const teamRank = t.Rank
+    const teamPoints = t.TotalPoints
+    // console.log(`${teamName}: ${teamISO2}, ${teamEmoji}`)
+    trB.innerHTML =
+      '<td class="text-end">' + teamRank + '</td>' +
+      '<td>' + teamEmoji + ' ' + teamName + '</td>' +
+      '<td class="text-end">' + teamPoints.toFixed(2) + '</td>'
+      
+    tbodyB.appendChild(trB);
+
+    // Remaining teams
+    if (remaining.indexOf(teamName) >= 0) {
+      const trA = document.createElement('tr');
+      trA.dataset.id = t.IdCountry;
+      trA.innerHTML =
+      '<td class="text-end">' + teamRank + '</td>' +
+      // '<td>' + remainCount + '. ' + teamEmoji + ' ' + teamName + '</td>' +
+      '<td>' + teamEmoji + ' ' + teamName + '</td>' +
+      '<td class="text-end">' + teamPoints.toFixed(2) + '</td>'
+      tbodyA.appendChild(trA);
+      remainCount = remainCount + 1
+    }
+  });
+
+  scheduleDraw();
+}
+
+loadData()
+
+// --- Connector drawing logic ---
+const svg = document.getElementById('connector');
+const containerA = document.getElementById('tableA');
+const containerB = document.getElementById('tableB');
+
+function drawLines() {
+  svg.innerHTML = '';
+  const svgRect = svg.getBoundingClientRect();
+  const rowsA = tbodyA.querySelectorAll('tr');
+  const boxA = containerA.getBoundingClientRect();
+  const boxB = containerB.getBoundingClientRect();
+
+  rowsA.forEach(function (rowA) {
+    const rowB = tbodyB.querySelector('tr[data-id="' + rowA.dataset.id + '"]');
+    if (!rowB) return;
+
+    const rA = rowA.getBoundingClientRect();
+    const rB = rowB.getBoundingClientRect();
+
+    // Skip rows that have scrolled out of view in either table
+    if ((rA.bottom - 80) < boxA.top) return;
+    if (rA.top > boxA.bottom) return;
+    // if (rB.bottom < boxB.top || rB.top > boxB.bottom) return;
+
+    const y1 = rA.top + rA.height / 2 - svgRect.top;
+    const y2 = rB.top + rB.height / 2 - svgRect.top;
+    const x1 = rA.right - svgRect.left;
+    const x2 = rB.left - svgRect.left;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const midX = (x1 + x2) / 2;
+    path.setAttribute(
+      'd',
+      'M ' + x1 + ' ' + y1 +
+      ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2
+    );
+    path.setAttribute('stroke', '#888');
+    path.setAttribute('stroke-width', '1');
+    path.setAttribute('fill', 'none');
+    svg.appendChild(path);
+  });
+}
+
+let raf = null;
+function scheduleDraw() {
+  if (raf) cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(drawLines);
+}
+
+containerA.addEventListener('scroll', scheduleDraw);
+containerB.addEventListener('scroll', scheduleDraw);
+window.addEventListener('resize', scheduleDraw);
+setTimeout(drawLines, 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Linked tables demo</title>
+<link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
+<style>
+  body { padding: 2rem; }
+  .table-wrap {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--tblr-border-color);
+    border-radius: 6px;
+  }
+  .linked-container {
+    position: relative;
+    display: flex;
+    gap: 0;
+    max-width: 700px;
+  }
+  #tableA { width: 320px; }
+  #tableB { width: 320px; margin-left: auto; }
+  #connector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 320px;
+    pointer-events: none;
+  }
+  thead th { position: sticky; top: 0; background: var(--tblr-bg-surface); }
+</style>
+</head>
+<body>
+
+<h2 class="mb-4">Linked tables (scroll either one)</h2>
+
+<div class="linked-container">
+  <div id="tableA" class="table-wrap">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th class="text-end">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyA"></tbody>
+    </table>
+  </div>
+
+  <svg id="connector"></svg>
+
+  <div id="tableB" class="table-wrap">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Order</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyB"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/*
+  HOW THIS WORKS
+  ---------------
+  1. Each row in both tables gets a shared data-id attribute (the linking key
+     from your merged API data — e.g. an order ID, ticket ID, etc).
+  2. An absolutely-positioned <svg> sits over the gap between the two tables.
+  3. drawLines() finds, for every visible row in table A, the matching row in
+     table B (same data-id), gets both rows' on-screen positions via
+     getBoundingClientRect(), and draws a curved path between them.
+  4. Lines are redrawn on every scroll event (throttled with
+     requestAnimationFrame so it doesn't lag) and on window resize.
+  5. Rows that have scrolled out of view in either table are skipped, so you
+     never see a line pointing off into nowhere.
+
+  TO USE WITH YOUR REAL DATA:
+  - Replace the `orders` array below with your merged API response.
+  - Make sure every row you render sets dataset.id (or data-id) to the value
+    that links a row in table A to its counterpart in table B.
+  - Swap the column content in the two innerHTML lines to match your fields.
+*/
+
+// --- Demo data — replace with your merged API data ---
+const names = ['Maya R.', 'Tom K.', 'Priya S.', 'Jon L.', 'Asha W.'];
+const orders = [];
+for (let i = 0; i < 14; i++) {
+  orders.push({
+    id: 'ORD-' + (1001 + i),
+    amount: (Math.random() * 400 + 20).toFixed(2),
+    customer: names[i % names.length]
+  });
+}
+
+// --- Render rows into both tables ---
+const tbodyA = document.getElementById('tbodyA');
+const tbodyB = document.getElementById('tbodyB');
+
+orders.forEach(function (o) {
+  const trA = document.createElement('tr');
+  trA.dataset.id = o.id;
+  trA.innerHTML =
+    '<td>' + o.id + '</td>' +
+    '<td class="text-end">$' + o.amount + '</td>';
+  tbodyA.appendChild(trA);
+
+  const trB = document.createElement('tr');
+  trB.dataset.id = o.id;
+  trB.innerHTML =
+    '<td>' + o.customer + '</td>' +
+    '<td>' + o.id + '</td>';
+  tbodyB.appendChild(trB);
+});
+
+// --- Connector drawing logic ---
+const svg = document.getElementById('connector');
+const containerA = document.getElementById('tableA');
+const containerB = document.getElementById('tableB');
+
+function drawLines() {
+  svg.innerHTML = '';
+  const svgRect = svg.getBoundingClientRect();
+  const rowsA = tbodyA.querySelectorAll('tr');
+  const boxA = containerA.getBoundingClientRect();
+  const boxB = containerB.getBoundingClientRect();
+
+  rowsA.forEach(function (rowA) {
+    const rowB = tbodyB.querySelector('tr[data-id="' + rowA.dataset.id + '"]');
+    if (!rowB) return;
+
+    const rA = rowA.getBoundingClientRect();
+    const rB = rowB.getBoundingClientRect();
+
+    // Skip rows that have scrolled out of view in either table
+    if (rA.bottom < boxA.top || rA.top > boxA.bottom) return;
+    if (rB.bottom < boxB.top || rB.top > boxB.bottom) return;
+
+    const y1 = rA.top + rA.height / 2 - svgRect.top;
+    const y2 = rB.top + rB.height / 2 - svgRect.top;
+    const x1 = rA.right - svgRect.left;
+    const x2 = rB.left - svgRect.left;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const midX = (x1 + x2) / 2;
+    path.setAttribute(
+      'd',
+      'M ' + x1 + ' ' + y1 +
+      ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2
+    );
+    path.setAttribute('stroke', '#888');
+    path.setAttribute('stroke-width', '1');
+    path.setAttribute('fill', 'none');
+    svg.appendChild(path);
+  });
+}
+
+let raf = null;
+function scheduleDraw() {
+  if (raf) cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(drawLines);
+}
+
+containerA.addEventListener('scroll', scheduleDraw);
+containerB.addEventListener('scroll', scheduleDraw);
+window.addEventListener('resize', scheduleDraw);
+setTimeout(drawLines, 50);
+</script>
+
+</body>
+</html>
