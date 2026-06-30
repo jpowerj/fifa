@@ -11,39 +11,61 @@
     src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js">
 </script>
 <style>
-  body { padding: 2rem; }
-  .table-wrap {
-    max-height: 88vh;
-    overflow-y: auto;
-    border: 1px solid var(--tblr-border-color);
-    border-radius: 6px;
-  }
-  .linked-container {
-    position: relative;
-    display: flex;
-    gap: 0;
-    max-width: 900px;
-    margin: auto;
-  }
-  #tableA {
-    width: 360px;
-  }
-  #tableB {
-    width: 360px; margin-left: auto;
-  }
-  #connector {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 88vh;
-    pointer-events: none;
-  }
-  thead {
-    position: sticky;
-    top: 0;
-    background: var(--tblr-bg-surface);
-  }
+body {
+  padding: 0.5rem;
+  font-size: 10.75pt;
+}
+table {
+  border-collapse: collapse;
+}
+th {
+  padding: 2px 8px !important;
+}
+td {
+  padding: 2px 6px !important;
+  /* border: 1px solid #ddd; */
+}
+.table-wrap {
+  max-height: 98vh;
+  overflow-y: auto;
+  border: 1px solid var(--tblr-border-color);
+  border-radius: 6px;
+}
+.linked-container {
+  position: relative;
+  display: flex;
+  gap: 0;
+  max-width: 960px;
+  margin: auto;
+}
+#tableA {
+  width: 380px;
+}
+#tableB {
+  width: 380px; margin-left: auto;
+}
+#connector {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 98vh;
+  pointer-events: none;
+}
+thead {
+  position: sticky;
+  top: 0;
+  background: var(--tblr-bg-surface);
+}
+tr.remains {
+  background-color: #90EE9080;
+}
+tr.qualified {
+  background-color: #FFFFE0;
+}
+td:nth-child(3) {
+  font-size: 9pt;
+}
 </style>
 </head>
 
@@ -53,11 +75,8 @@
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
-          <th colspan="3" style="text-align: center;">Remaining Teams</th>
-        </tr>
-        <tr>
-          <th class="text-end">Rank</th>
-          <th>Team</th>
+          <th class="text-end">FIFA Rank</th>
+          <th>Remaining Team</th>
           <th class="text-end">Points</th>
         </tr>
       </thead>
@@ -71,10 +90,7 @@
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
-          <th colspan="3" style="text-align: center;">FIFA Rankings</th>
-        </tr>
-        <tr>
-          <th class="text-end">Rank</th>
+          <th class="text-end">FIFA Rank</th>
           <th>Team</th>
           <th class="text-end">Points</th>
         </tr>
@@ -340,21 +356,28 @@ const countryISOMapping = {
   ZWE: "ZW",
   XKX: "XK"
 }
-const RANKING_DATA = 'data/mens-rankings.json';
-const REMAIN_DATA = 'data/remaining.txt';
+const RANKING_DATA = 'data/mens-rankings.json'
+const REMAIN_DATA = 'data/remaining.txt'
+const QUAL_DATA = 'data/qualified.txt'
 
 const tbodyA = document.getElementById('tbodyA');
 const tbodyB = document.getElementById('tbodyB');
 
 async function loadData() {
   try {
+    // FIFA rankings
     const rankingResult = await fetch(RANKING_DATA);
     const rankingJson = await rankingResult.json();
+    // Remaining teams
     const remainResult = await fetch(REMAIN_DATA);
     const remainText = await remainResult.text();
-    const remainList = remainText.split('\n');
-    console.log(remainList)
-    renderRows(rankingJson.Results || [], remainList || []);
+    const remainList = remainText.split('\n') || []
+    // console.log(remainList)
+    // Qualified teams
+    const qualResult = await fetch(QUAL_DATA)
+    const qualText = await qualResult.text()
+    const qualList = qualText.split('\n') || []
+    renderRows(rankingJson.Results || [], remainList, qualList);
   } catch (err) {
     console.error('Failed to load data:', err);
     tbodyA.innerHTML = '<tr><td colspan="2">Failed to load data.</td></tr>';
@@ -369,42 +392,80 @@ function getFlagEmoji(iso2Code) {
 
 const customEmojis = {
   'Algeria': '🇩🇿',
+  'American Samoa': '🇦🇸',
   'Angola': '🇦🇴',
+  'Aruba': '🇦🇼',
   'Bahamas': '🇧🇸',
+  'Bangladesh': '🇧🇩',
+  'Bermuda': '🇧🇲',
+  'Bhutan': '🇧🇹',
+  'Botswana': '🇧🇼',
   'Brunei': '🇧🇳',
   'Bulgaria': '🇧🇬',
+  'Cambodia': '🇰🇭',
   'Cayman Islands': '🇰🇾',
+  'Central African Republic': '🇨🇫',
+  'Chad': '🇹🇩',
   'Chile': '🇨🇱',
+  'Chinese Taipei': '🇹🇼',
+  'Congo': '🇨🇬',
   'Costa Rica': '🇨🇷',
   'Croatia': '🇭🇷',
   'Denmark': '🇩🇰',
   'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Equatorial Guinea': '🇬🇶',
+  'Fiji': '🇫🇯',
+  'The Gambia': '🇬🇲',
   'Germany': '🇩🇪',
   'Greece': '🇬🇷',
+  'Grenada': '🇬🇩',
   'Guatemala': '🇬🇹',
   'Guinea': '🇬🇳',
   'Haiti': '🇭🇹',
   'Honduras': '🇭🇳',
   'Kosovo': '🇽🇰',
+  'Kuwait': '🇰🇼',
+  'Lesotho': '🇱🇸',
+  'Madagascar': '🇲🇬',
+  'Malaysia': '🇲🇾',
+  'Mauritania': '🇲🇷',
+  'Mauritius': '🇲🇺',
+  'Myanmar': '🇲🇲',
+  'Nepal': '🇳🇵',
   'Netherlands': '🇳🇱',
+  'Nicaragua': '🇳🇮',
+  'Niger': '🇳🇪',
   'Oman': '🇴🇲',
+  'Philippines': '🇵🇭',
   'Portugal': '🇵🇹',
+  'Puerto Rico': '🇵🇷',
   'Seychelles': '🇸🇨',
   'Switzerland': '🇨🇭',
   'Palestine': '🇵🇸',
   'Paraguay': '🇵🇾',
+  'Samoa': '🇼🇸',
   'Saudi Arabia': '🇸🇦',
   'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'Solomon Islands': '🇸🇧',
   'South Africa': '🇿🇦',
+  'Sri Lanka': '🇱🇰',
+  'St. Kitts and Nevis': '🇰🇳',
+  'St. Vincent / Grenadines': '🇻🇨',
+  'Tahiti': '🇵🇫',
+  'Tanzania': '🇹🇿',
+  'Togo': '🇹🇬',
   'Tonga': '🇹🇴',
+  'Trinidad and Tobago': '🇹🇹',
   'United Arab Emirates': '🇦🇪',
   'Uruguay': '🇺🇾',
+  'Vanuatu': '🇻🇺',
   'Vietnam': '🇻🇳',
   'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
   'Zambia': '🇿🇲',
+  'Zimbabwe': '🇿🇼',
 }
 
-function renderRows(teams, remaining) {
+function renderRows(teams, remaining, qualified) {
   tbodyA.innerHTML = '';
   tbodyB.innerHTML = '';
   let remainCount = 1;
@@ -423,15 +484,27 @@ function renderRows(teams, remaining) {
     const teamRank = t.Rank
     const teamPoints = t.TotalPoints
     // console.log(`${teamName}: ${teamISO2}, ${teamEmoji}`)
+    let teamRemains = false
+    let teamQualified = false
+    if (remaining.indexOf(teamName) >= 0) {
+      teamRemains = true
+      trB.classList.add('remains')
+    }
+    if (qualified.indexOf(teamName) >= 0) {
+      teamQualified = true
+      if (!teamRemains) {
+        trB.classList.add('qualified')
+      }
+    }
     trB.innerHTML =
-      '<td class="text-end">' + teamRank + '</td>' +
+      `<td class="text-end">` + teamRank + '</td>' +
       '<td>' + teamEmoji + ' ' + teamName + '</td>' +
       '<td class="text-end">' + teamPoints.toFixed(2) + '</td>'
       
     tbodyB.appendChild(trB);
 
     // Remaining teams
-    if (remaining.indexOf(teamName) >= 0) {
+    if (teamRemains) {
       const trA = document.createElement('tr');
       trA.dataset.id = t.IdCountry;
       trA.innerHTML =
@@ -469,7 +542,8 @@ function drawLines() {
     const rB = rowB.getBoundingClientRect();
 
     // Skip rows that have scrolled out of view in either table
-    if ((rA.bottom - 80) < boxA.top) return;
+    const topPad = 0
+    if ((rA.bottom - topPad) < boxA.top) return;
     if (rA.top > boxA.bottom) return;
     // if (rB.bottom < boxB.top || rB.top > boxB.bottom) return;
 
